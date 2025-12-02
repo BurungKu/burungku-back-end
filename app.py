@@ -9,7 +9,13 @@ from utils import preprocess, postprocess
 
 app = FastAPI()
 
-session = ort.InferenceSession("yolov9t.onnx", providers=["CPUExecutionProvider"])
+# Lazily load session to avoid Heroku startup crashes
+session = None
+def get_session():
+    global session
+    if session is None:
+        session = ort.InferenceSession("yolov9t.onnx", providers=["CPUExecutionProvider"])
+    return session
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
@@ -19,7 +25,8 @@ async def predict(file: UploadFile = File(...)):
 
     img_input, orig_w, orig_h = preprocess(img)
 
-    outputs = session.run(None, {"input": img_input})
+    ort_session = get_session()
+    outputs = ort_session.run(None, {"input": img_input})
 
     detections = postprocess(outputs, orig_w, orig_h)
 

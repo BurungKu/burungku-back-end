@@ -1,6 +1,8 @@
+gunicorn
 fastapi
 uvicorn
 pillow
 onnxruntime
 numpy
 opencv-python-headless
+python-multipart
