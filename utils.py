@@ -46,42 +46,54 @@ def box_iou(box1, boxes):
 
 
 def postprocess(outputs, orig_w, orig_h, conf_thres=0.25, iou_thres=0.45):
-
-    preds = outputs[0][0]
+    pred = outputs[0]          # (1, 84, 8400)
+    pred = pred[0]             # (84, 8400)
+    pred = pred.transpose(1, 0)  # (8400, 84)
 
     boxes = []
     scores = []
     classes = []
 
-    for det in preds:
-        x1, y1, x2, y2, score, cls = det.tolist()
+    for det in pred:
+        # det = [x, y, w, h, obj_conf, cls1, cls2, ...]
+        x, y, w, h = det[:4]
+        obj_conf = det[4]
+        cls_scores = det[5:]
+
+        cls = np.argmax(cls_scores)
+        cls_conf = cls_scores[cls]
+
+        score = obj_conf * cls_conf
         if score < conf_thres:
             continue
 
-        x1 *= orig_w / 640
-        x2 *= orig_w / 640
-        y1 *= orig_h / 640
-        y2 *= orig_h / 640
+        # Convert xywh → xyxy
+        x1 = (x - w / 2) * (orig_w / 640)
+        y1 = (y - h / 2) * (orig_h / 640)
+        x2 = (x + w / 2) * (orig_w / 640)
+        y2 = (y + h / 2) * (orig_h / 640)
 
         boxes.append([x1, y1, x2, y2])
         scores.append(score)
-        classes.append(int(cls))
-
-    boxes = np.array(boxes)
-    scores = np.array(scores)
+        classes.append(cls)
 
     if len(boxes) == 0:
         return []
 
+    boxes = np.array(boxes)
+    scores = np.array(scores)
+    classes = np.array(classes)
+
+    # NMS
     keep = nms(boxes, scores, iou_thres)
 
     results = []
     for i in keep:
-        x1, y1, x2, y2 = boxes[i]
         results.append({
-            "bbox": [float(x1), float(y1), float(x2), float(y2)],
+            "bbox": [float(boxes[i][0]), float(boxes[i][1]), float(boxes[i][2]), float(boxes[i][3])],
             "score": float(scores[i]),
             "class": int(classes[i])
         })
 
     return results
+

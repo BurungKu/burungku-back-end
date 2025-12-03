@@ -26,8 +26,12 @@ async def predict(file: UploadFile = File(...)):
     img_input, orig_w, orig_h = preprocess(img)
 
     ort_session = get_session()
-    outputs = ort_session.run(None, {"input": img_input})
+    outputs = ort_session.run(None, {"images": img_input})
+    
+
+
 
     detections = postprocess(outputs, orig_w, orig_h)
 
     return JSONResponse({"detections": detections})
+    #return print("ONNX outputs:", [o.shape for o in outputs])
