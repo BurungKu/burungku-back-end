@@ -1,13 +1,15 @@
 import os
 import io
 import numpy as np
-from fastapi import FastAPI, UploadFile, File, HTTPException, Header
+from fastapi import FastAPI, UploadFile, File, HTTPException, Header, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from PIL import Image
 import onnxruntime as ort
 import pickle
 import json
+import joblib
+import librosa
 
 # -----------------------------
 # Load API_KEY from Heroku env
@@ -35,6 +37,12 @@ app.add_middleware(
 # -----------------------------
 ONNX_PATH = "mobilenetv3_birds.onnx"
 session = ort.InferenceSession(ONNX_PATH, providers=["CPUExecutionProvider"])
+
+AUDIO_MODEL = joblib.load("gb_audio_classifier.pkl")
+SPECIES_ENCODER = joblib.load("species_encoder.pkl")
+TYPE_ENCODER = joblib.load("type_encoder.pkl")
+MAX_LEN = joblib.load("max_len.pkl")
+
 
 import logging
 
@@ -161,7 +169,67 @@ async def predict(file: UploadFile = File(...), topk: int = 3, x_api_key: str = 
     }
 
 
+@app.post("/predict_audio")
+async def predict_audio(
+    audio_file: UploadFile = File(...),
+    species: str = Form(...),
+    x_api_key: str = Header(None)
+):
+    # API key check
+    verify_api_key(x_api_key)
+
+    # Read uploaded file
+    file_bytes = await audio_file.read()
+
+    # ----------------------
+    # Preprocess audio
+    # ----------------------
+    try:
+        y, sr = librosa.load(io.BytesIO(file_bytes), sr=None, duration=3)
+
+        spec = librosa.feature.melspectrogram(y=y, sr=sr)
+        spec = librosa.power_to_db(spec, ref=np.max)
+        spec = spec.T  # shape (time, mel)
+
+        # Pad or cut to MAX_LEN
+        if spec.shape[0] < MAX_LEN:
+            spec = np.pad(spec, ((0, MAX_LEN - spec.shape[0]), (0, 0)), mode="constant")
+        else:
+            spec = spec[:MAX_LEN]
+
+        X_audio = spec.reshape(1, -1)  # flatten
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Audio processing failed: {str(e)}")
+
+    # ----------------------
+    # Encode species → one-hot
+    # ----------------------
+    try:
+        sp_idx = SPECIES_ENCODER.transform([species])[0]
+        sp_onehot = np.eye(len(SPECIES_ENCODER.classes_))[sp_idx].reshape(1, -1)
+    except:
+        raise HTTPException(status_code=400, detail=f"Unknown species: {species}")
+
+    # Combine features
+    X = np.hstack([X_audio, sp_onehot])
+
+    # ----------------------
+    # Predict
+    # ----------------------
+    try:
+        pred = AUDIO_MODEL.predict(X)[0]
+        pred_label = TYPE_ENCODER.inverse_transform([pred])[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Model prediction error: {str(e)}")
+
+    return {
+        "species": species,
+        "predicted_simple_type": pred_label
+    }
+
 
 @app.get("/")
 def root():
     return {"status": "ok", "model": ONNX_PATH, "classes": len(LABELS)}
+
+
