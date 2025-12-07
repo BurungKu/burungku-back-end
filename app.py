@@ -132,7 +132,7 @@ def softmax(x):
 # Prediction endpoint
 # -----------------------------
 @app.post("/predict")
-async def predict(file: UploadFile = File(...), topk: int = 3, x_api_key: str = Header(None)):
+async def predict(file: UploadFile = File(...), topk: int = 4, x_api_key: str = Header(None)):
     verify_api_key(x_api_key)
 
     try:
@@ -157,15 +157,17 @@ async def predict(file: UploadFile = File(...), topk: int = 3, x_api_key: str = 
         species = LABELS[i]
         status = IUCN.get(species, "Unknown")
 
+        percentage = round(float(probs[i]) * 100, 2)
+
         results.append({
             "species": species,
-            "score": float(probs[i]),
+            "score": percentage,
             "iucn": status
         })
 
     return {
         "top1": results[0],
-        "topk": results
+        "topk": results[1:4]
     }
 
 
