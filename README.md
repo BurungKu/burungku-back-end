@@ -1,77 +1,111 @@
-# 🐦 BurungKu  
-**Identifikasi Spesies Burung & Analisis Kesehatan dari Kicauan — Powered by AI**
+## 🔧 Contoh Request Client (Python / Colab)
 
-BurungKu adalah aplikasi kecerdasan buatan yang dirancang untuk membantu pecinta burung, peneliti, hingga masyarakat umum dalam **mengidentifikasi spesies burung dari gambar**, serta **mendeteksi kondisi burung dari kicauannya**.  
-Aplikasi ini juga memiliki visi jangka panjang sebagai platform konservasi dan ekosistem digital yang etis.
+Berikut contoh lengkap cara memanggil API Backend BurungKu menggunakan Python atau Google Colab.
 
----
+## 🐦 1. Request Prediksi Gambar Burung
 
-## 🚀 Fitur Utama
+Endpoint: POST /predict
+Field: file
+Header: x-api-key
 
-### 🔍 1. Deteksi Spesies dari Gambar  
-- Model vision AI dilatih menggunakan dataset **iNatLoc**.  
-- Mampu mengenali **106 spesies burung** lokal.  
-- Mendukung input gambar dari kamera maupun upload file.  
-- Output mencakup:
-  - Nama spesies  
-  - Skor probabilitas  
-  - Informasi konservasi dasar
+# cUrl
+```bash
+curl -X POST "https://burung-ku-be-d45c373c2814.herokuapp.com/predict" \
+  -H "x-api-key: " \
+  -F "file=@/path/to/your/image.jpg"
+```
 
----
+# Python/Dari colab
+```bash
+import requests
 
-### 🎙️ 2. Analisis Kesehatan dari Kicauan  
-- Model audio dilatih menggunakan ribuan rekaman dari **Xeno-Canto**.  
-- Mengklasifikasi jenis kicauan untuk mendeteksi indikasi kondisi burung.  
-- Didesain untuk analisis awal, bukan diagnosis medis.
+url = "https://burung-ku-be-d45c373c2814.herokuapp.com/predict"
+API_KEY = ""
 
----
+img_path = "/content/02a9c226-fde1-4490-b5d3-614a054d0cfa.jpg"
 
-## 🌱 Visi Jangka Panjang
+with open(img_path, "rb") as f:
+    files = {
+        "file": ("bird.jpg", f, "image/jpeg")
+    }
+    headers = {
+        "x-api-key": API_KEY
+    }
+    response = requests.post(url, files=files, headers=headers)
 
-### 🛒 Marketplace Satwa yang Etis  
-Marketplace yang mempromosikan perdagangan legal dan bertanggung jawab.
+print("Status:", response.status_code)
+print("Raw response:")
+print(response.text)
 
-### 🪪 Paspor Burung Digital  
-Identitas digital burung untuk riwayat kesehatan, silsilah, dan kepemilikan.
+```
 
-### 📢 Platform Aduan Masyarakat  
-Fitur untuk melaporkan perburuan liar, penyelundupan, atau burung terluka.
+# ✔ Contoh Output yang Diharapkan
 
----
-
-## 🧠 Model dan Dataset
-
-### 1. **Image Bird Classifier**
-- Dataset: **iNatLoc**  
-- Jumlah spesies: **106 spesies**
-
-### 2. **Bird Sound Condition Classifier**
-- Dataset: **Xeno-Canto**  
-- Preprocessing: Mel-spectrogram, normalisasi, segmentasi audio
-
----
-
-## 📚 Sitasi Dataset
-
-### **iNatLoc Dataset Citation**
-Silakan gunakan sitasi resmi berikut jika menyebut dataset di makalah atau dokumentasi model:
-
-**iNatLoc: A Benchmark for Fine-Grained Local Bird Classification**  
-*Vincent, Hugo; Ben-Younes, Hedi; Russell, Bryan C.; Jégou, Hervé.*  
-2023.  
-Repository: https://github.com/HugoTian/iNatLoc  
-(Atau sesuai format sitasi akademik)
-
-```bibtex
-@misc{inatloc2023,
-  title        = {iNatLoc: A Benchmark for Fine-Grained Local Bird Classification},
-  author       = {Vincent, Hugo and Ben-Younes, Hedi and Russell, Bryan C. and Jégou, Hervé},
-  year         = {2023},
-  url          = {https://github.com/HugoTian/iNatLoc},
+```bash
+{
+  "success": true,
+  "top1": {
+    "species": "Calidris bairdii",
+    "score": 92.9,
+    "iucn": "LC"
+  },
+  "topk": [
+    {"species": "Calidris melanotos", "score": 2.88, "iucn": "LC"},
+    {"species": "Calidris minutilla", "score": 2.29, "iucn": "LC"},
+    {"species": "Calidris pusilla", "score": 1.2, "iucn": "LC"}
+  ]
 }
+```
 
-@misc{xenocanto,
-  title        = {Xeno-Canto: Sharing bird sounds from around the world},
-  author       = {Xeno-Canto Foundation},
-  url          = {https://www.xeno-canto.org}
+## 🎙️ 2. Request Prediksi Suara Burung
+
+Endpoint: POST /predict_audio
+Field: audio_file
+Optional: species (boleh dikosongkan)
+Header: x-api-key
+
+⚠️ Catatan:
+
+Untuk file .mp3 gunakan MIME type: "audio/mpeg"
+
+Untuk file .wav gunakan: "audio/wav"
+
+```bash
+import requests
+
+url = "https://burung-ku-be-d45c373c2814.herokuapp.com/predict_audio"
+API_KEY = ""
+audio_path = "/content/600081.mp3"
+
+with open(audio_path, "rb") as f:
+    response = requests.post(
+        url,
+        headers={"x-api-key": API_KEY},
+        files={
+            "audio_file": ("audio.mp3", f, "audio/mpeg")
+        },
+        data={
+            "species": "Aix sponsa"  
+        }
+    )
+
+print("Status:", response.status_code)
+print("Raw response:")
+print(response.text)
+```
+# cUrl
+
+```bash
+
+curl -X POST "https://burung-ku-be-d45c373c2814.herokuapp.com/predict_audio" \
+  -H "x-api-key: AntekAsing" \
+  -F "audio_file=@/path/to/audio.mp3" \
+  -F "species=Aix sponsa"
+```
+
+# ✔ Contoh Output yang Diharapkan
+{
+  "success": true,
+  "species": "Aix sponsa",
+  "predicted_simple_type": "contact_call"
 }
