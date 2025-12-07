@@ -1,21 +1,21 @@
-## 🔧 Contoh Request Client (Python / Colab)
+# 🔧 Contoh Request Client (Python / Colab)
 
-Berikut contoh lengkap cara memanggil API Backend BurungKu menggunakan Python atau Google Colab.
+Berikut contoh lengkap cara memanggil API Backend BurungKu.
 
-## 🐦 1. Request Prediksi Gambar Burung
+# 🐦 1. Request Prediksi Gambar Burung
 
 Endpoint: POST /predict
 Field: file
 Header: x-api-key
 
-# cUrl
+## cUrl
 ```bash
 curl -X POST "https://burung-ku-be-d45c373c2814.herokuapp.com/predict" \
   -H "x-api-key: " \
   -F "file=@/path/to/your/image.jpg"
 ```
 
-# Python/Dari colab
+## Python/Dari colab
 ```bash
 import requests
 
@@ -39,7 +39,7 @@ print(response.text)
 
 ```
 
-# ✔ Contoh Output yang Diharapkan
+## ✔ Contoh Output yang Diharapkan
 
 ```bash
 {
@@ -57,7 +57,7 @@ print(response.text)
 }
 ```
 
-## 🎙️ 2. Request Prediksi Suara Burung
+# 🎙️ 2. Request Prediksi Suara Burung
 
 Endpoint: POST /predict_audio
 Field: audio_file
@@ -69,6 +69,8 @@ Header: x-api-key
 Untuk file .mp3 gunakan MIME type: "audio/mpeg"
 
 Untuk file .wav gunakan: "audio/wav"
+
+## Python/Dari colab
 
 ```bash
 import requests
@@ -93,7 +95,7 @@ print("Status:", response.status_code)
 print("Raw response:")
 print(response.text)
 ```
-# cUrl
+## cUrl
 
 ```bash
 
