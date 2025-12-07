@@ -2,6 +2,16 @@
 
 Berikut contoh lengkap cara memanggil API Backend BurungKu.
 
+# Konfigurasi API_KEY
+Project ini harus dideploy pada [Heroku](https://www.heroku.com) untuk konfigurasi .env (API_KEY) dengan cara:
+1. Login -> Create New App -> Deploy
+2. Connect repository/manual deploy
+3. Setting -> Config Vars
+```
+   x-api-key=YOUR_API_KEY
+```
+Catatan: Pastikan API_KEY mempunyai value yang sama antara front-end dan back-end
+
 # 🐦 1. Request Prediksi Gambar Burung
 
 Endpoint: POST /predict
@@ -100,7 +110,7 @@ print(response.text)
 ```bash
 
 curl -X POST "https://burung-ku-be-d45c373c2814.herokuapp.com/predict_audio" \
-  -H "x-api-key: AntekAsing" \
+  -H "x-api-key: API_KEY" \
   -F "audio_file=@/path/to/audio.mp3" \
   -F "species=Aix sponsa"
 ```
